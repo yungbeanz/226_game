@@ -1,3 +1,5 @@
 #!/usr/bin/python3.11
+from Board import Board
 
-print("Hello World")
+b = Board(10, 4)
+print(b)
