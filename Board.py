@@ -1,5 +1,4 @@
 import random
-from Player import Player
 
 class Board:
 
@@ -12,7 +11,13 @@ class Board:
 
         # Error handling before program continues.
         if not isinstance(self.boardSize, int) or not isinstance(self.treasureSize, int):
-            raise ValueError('Board only takes two integer parameters.')
+            raise TypeError('Board only takes two integer parameters.')
+        if self.boardSize <= 0 or self.treasureSize <= 0:
+            raise ValueError('Board parameters must be positive integers.')
+
+        # Error handling to make sure that treasure size is smaller than board size.
+        if self.treasureSize > self.boardSize:
+            raise Exception('Please make sure the treasure is the same size, or smaller than the board size.')
 
         # Call the function that creates the gameboard.
         self.createGameBoard()
@@ -37,7 +42,7 @@ class Board:
                 self.treasures[i][j] = str(i+1)
 
         # Randomly assign the treasure values to positions on the board.
-        # First treasures are placed randomly, every following treasure checks if there is treasure in it's position to be placed.
+        # First treasures are placed randomly, every following treasure checks if there is treasure in its position to be placed.
         i = 0
         while i < self.treasureSize:
             randomRow = random.randint(0, self.boardSize - 1)
@@ -57,9 +62,10 @@ class Board:
         openSpots = True
 
         if self.board[row][column] == '_':
-            if self.board[row][column - i] == '_':
+
+            if (column - i) > 0:
                 for j in range(0, i + 1):
-                    if self.board[row][column - j]:
+                    if self.board[row][column - j] == '_':
                         continue
                     else:
                         openSpots = False
@@ -67,9 +73,10 @@ class Board:
                 if openSpots:
                     for j in range(0, i + 1):
                         self.board[row][column - j] = str(self.treasures[i][j])
-            elif self.board[row + 1][column] == '_':
+
+            elif (row + i) < self.boardSize:
                 for j in range(0, i + 1):
-                    if self.board[row + j][column]:
+                    if self.board[row + j][column] == '_':
                         continue
                     else:
                         openSpots = False
@@ -77,9 +84,10 @@ class Board:
                 if openSpots:
                     for j in range(0, i + 1):
                         self.board[row + j][column] = str(self.treasures[i][j])
-            elif self.board[row - 1][column] == '_':
+
+            elif (row - i) > 0:
                 for j in range(0, i + 1):
-                    if self.board[row - j][column]:
+                    if self.board[row - j][column] == '_':
                         continue
                     else:
                         openSpots = False
@@ -87,9 +95,10 @@ class Board:
                 if openSpots:
                     for j in range(0, i + 1):
                         self.board[row - j][column] = str(self.treasures[i][j])
-            elif self.board[row][column + 1] == '_':
+
+            elif (column + i) < self.boardSize:
                 for j in range(0, i + 1):
-                    if self.board[row][column + j]:
+                    if self.board[row][column + j] == '_':
                         continue
                     else:
                         openSpots = False
@@ -97,6 +106,7 @@ class Board:
                 if openSpots:
                     for j in range(0, i + 1):
                         self.board[row][column + j] = str(self.treasures[i][j])
+
         else:
             openSpots = False
 

@@ -14,6 +14,8 @@ print(b)
 row = 0
 col = 0
 while row != '' and col != '':
+    scoreFromGuess = 0
+
     try:
         row = input('Please guess row of next treasure (0-9): \n')
         col = input('Please guess column of next treasure (0-9): \n')
@@ -27,7 +29,7 @@ while row != '' and col != '':
 
     if scoreFromGuess != '_':
         p.addscore(int(scoreFromGuess))
-        print('Congratualations, you earned: ' + scoreFromGuess + ' points!')
+        print('Congratualations, you earned: ' + str(scoreFromGuess) + ' points!')
     else:
         print('Close, but no cigar...')
 
