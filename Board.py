@@ -115,9 +115,11 @@ class Board:
     # Locates a position on the gameboard, sets the position to '_' and returns that value in that position
     def pick(self, row, col):
         treasureValue = self.board[row][col]
+        if treasureValue == '_':
+            treasureValue = 0
         self.board[row][col] = '_'
 
-        return treasureValue
+        return int(treasureValue)
 
     # Prints the gameboard
     def __str__(self):
