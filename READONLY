@@ -1,0 +1,6 @@
+Uploading to git
+
+git status          # Check the status
+git add .          # Stage all changes
+git commit -m "Fix issue with feature X"  # Commit with a message
+git push origin main  # Push to the main branch
