@@ -9,7 +9,7 @@ boardSize = 10
 b = Board(boardSize, 4)
 
 # TCP Server variables.
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = 12345
 
 # Player objects.
@@ -24,7 +24,8 @@ async def handle_client(reader: StreamReader, writer: StreamWriter, player: Play
 
     while True:
         data = await reader.read(1) # Read 1 byte.
-        if not data: # client disconnected.
+
+        if len(data) < 1: # client disconnected.
             print(f"{player.name} disconnected")
             break
 
