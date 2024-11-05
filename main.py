@@ -1,52 +1,85 @@
 #!/usr/bin/python3.11
 import struct
-
 from Board import Board
 from Player import Player
-from socket import socket, AF_INET, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
+from asyncio import run, start_server, StreamReader, StreamWriter
 
-# Board initialization
-# Game setup
+# Game board setup.
 boardSize = 10
 b = Board(boardSize, 4)
-username = 'Player1'
-p = Player(username)
 
-# Player guessing loop
-row = 0
-col = 0
-
-# TCP SERVER
-BUF_SIZE = 1024
-HOST = ''
+# TCP Server variables.
+HOST = '127.0.0.1'
 PORT = 12345
 
-with socket(AF_INET, SOCK_STREAM) as sock: # TCP socket
-    sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) # Details later
-    sock.bind((HOST, PORT)) # Claim messages sent to port "PORT"
-    sock.listen(1) # Server only supports a single 3-way handshake at a time
-    print('Server:', sock.getsockname()) # Server IP and port
+# Player objects.
+players = [Player('One'), Player('Two')]
+connected_clients = []
+
+# Asyncio.
+async def handle_client(reader: StreamReader, writer: StreamWriter, player: Player) -> None:
+    addr = writer.get_extra_info('peername')
+    print('Client:', addr)
+    print(f"{player.name}")
+
     while True:
-        sc, _ = sock.accept() # Wait until a connection is established
-        with sc:
-            print('Client:', sc.getpeername()) # Client IP and port
-            s = sc.recv(BUF_SIZE)[0] # recvfrom not needed since address known
-            dataX = s & 0b00001111
-            dataY = (s >> 4) & 0b00001111
-            print('Player guess in hexadecimal: X: ' + str(hex(dataX)) + ' Y: ' + str(hex(dataY)) + '\nPlayer guess in decimal: X: ' + str(dataX) +  ' Y: ' + str(dataY))
+        data = await reader.read(1) # Read 1 byte.
+        if not data: # client disconnected.
+            print(f"{player.name} disconnected")
+            break
 
-            # Close connection if values are out of range of board.
-            if dataX < 0 or dataX > boardSize or dataY < 0 or dataY > boardSize:
-                sc.close()
+        # Process player guess.
+        s = data[0] # Get the integer at index 0 within the bytes object.
+        dataX, dataY = s & 0b00001111, (s >> 4) & 0b00001111
+        print(f"Player: {player.name}")
+        print(f"Score: {player.score}")
+        print(f'Last guess made: |X: {dataX}, (0x{dataX:X})| |Y: {dataY}, (0x{dataY:X})|')
+        print(b)
 
-            # GameLogic
-            p.addscore(b.pick(dataX, dataY))
+        # Check for out-of-bounds.
+        if not (0 <= dataX < boardSize and 0 <= dataY < boardSize):
+            print(f"{player.name} made an out-of-bounds guess, closing connection.")
+            break
 
-            # Pack playerscore data to unsigned short, with a 0 following, send to connected client, print out original board.
-            t = struct.pack('!HH', p.score, 0)
-            sc.sendall(t)
-            print(t)
-            print(b)
+        # Game logic.
+        player.addscore(b.pick(dataX, dataY))
 
-            # Close connection after each turn.
-            sc.close()
+        # Send player score.
+        score_message = struct.pack('!HH', player.score, 0)
+        writer.write(score_message)
+        await writer.drain()  # Ensure the data is sent.
+
+    # Remove the client from the list of connected clients. Reference is not removed automatically.
+    if writer in connected_clients:
+        connected_clients.remove(writer)
+
+    # Close client connection.
+    writer.close()
+    await writer.wait_closed()
+
+async def echo(reader: StreamReader, writer: StreamWriter) -> None:
+    # Assign player
+    if len(connected_clients) < len(players):
+        player = players[len(connected_clients)]
+        connected_clients.append(writer)
+
+        # Send player name length, and name.
+        writer.write(struct.pack('!H', len(player.name)))
+        await writer.drain()
+        writer.write(player.name.encode())
+        await writer.drain()
+
+        # Now handle the client in the handle_client coroutine.
+        await handle_client(reader, writer, player)
+    else:
+        # Close connection if more than two players.
+        writer.close()
+        await writer.wait_closed()
+
+async def main() -> None:
+    server = await start_server(echo, HOST, PORT)
+    print(f'Server started on {HOST}:{PORT}')
+    async with server:
+        await server.serve_forever()
+
+run(main())
