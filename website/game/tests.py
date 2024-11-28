@@ -29,13 +29,23 @@ class GameViewsTest(TestCase):
 
         # Check that the board is initialized correctly
         self.assertIsInstance(b, Board)
-        self.assertEqual(len(b.board), 100)
+        boardLength = 0
+        for i in range(0, len(b.board)):
+            for j in range(0, len(b.board[i])):
+                boardLength += 1
+        self.assertEqual(boardLength, 100)
 
     def test_score_update(self):
-        # Test for functionality where a player picks a tile and their score updates
-        # Example test to simulate score update functionality
-        response = self.client.get(reverse('pick', args=["One", 0, 0]))  # Pick the tile at (0, 0) for player "One"
+        # Tests to simulate score update functionality
+        for i in range(0, 10):
+            for j in range(0, 10):
+                response = self.client.get(reverse('pick', args=["One", i, j]))
+
+        # Because the board is randomized, it's almost impossible to get both players to pick set locations on the board, and both end up with a score.
+        # One of them might end up with 0 because of the board treasure placement randomization, and throw an error for no reason, so we're just testing player one.
+        # We already know player two is created from prior tests.
+        # So the tested functionality of player one should remain consistent to player two.
 
         # Check the score update based on the expected behavior
-        from game.views import playerOne, playerTwo
+        from game.views import playerOne
         self.assertGreater(playerOne.score, 0)  # Check that playerOne's score increased after the pick
