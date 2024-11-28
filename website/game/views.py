@@ -1,6 +1,4 @@
 from django.http import HttpResponse
-import sys
-sys.path.append("..")
 from Board import Board
 from Player import Player
 
